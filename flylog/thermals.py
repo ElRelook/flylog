@@ -49,23 +49,29 @@ def detect_thermals(
     min_duration_s: float = 30,
     min_gain_m: int = 30,
     window_s: float = 20,
+    max_gap_s: float = 45,
 ) -> list[Thermal]:
-    """Find segments where the averaged vario stays above `min_climb` m/s."""
+    """Find segments where the averaged vario stays above `min_climb` m/s.
+
+    Climbs separated by less than `max_gap_s` (a weak spot in a turn,
+    re-centering the core) are merged into a single thermal.
+    """
     fixes = [f for f in flight.fixes if f.valid]
     rates = vario(fixes, window_s)
 
-    segments: list[list[Fix]] = []
-    current: list[Fix] = []
-    for fix, rate in zip(fixes, rates):
-        if rate >= min_climb:
-            current.append(fix)
-        elif current:
-            segments.append(current)
-            current = []
-    if current:
-        segments.append(current)
+    # (start, end) index ranges of climbing fixes
+    ranges: list[list[int]] = []
+    for i, rate in enumerate(rates):
+        if rate < min_climb:
+            continue
+        if ranges and ranges[-1][1] == i - 1:
+            ranges[-1][1] = i
+        elif ranges and (fixes[i].time - fixes[ranges[-1][1]].time).total_seconds() <= max_gap_s:
+            ranges[-1][1] = i
+        else:
+            ranges.append([i, i])
 
-    thermals = [_build(seg) for seg in segments if len(seg) > 1]
+    thermals = [_build(fixes[a: b + 1]) for a, b in ranges if b > a]
     return [
         t for t in thermals if t.duration_s >= min_duration_s and t.gain_m >= min_gain_m
     ]

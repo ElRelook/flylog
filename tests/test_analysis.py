@@ -49,3 +49,30 @@ def test_stats_needs_fixes():
 def test_cli_runs(capsys):
     assert main([str(EXAMPLE)]) == 0
     assert "thermique" in capsys.readouterr().out
+
+
+def _flight_from_altitudes(alts):
+    from datetime import datetime, timedelta
+
+    from flylog import Fix, Flight
+
+    t0 = datetime(2026, 1, 1, 12)
+    return Flight(fixes=[
+        Fix(t0 + timedelta(seconds=i), 45.3, 5.88, True, a, a) for i, a in enumerate(alts)
+    ])
+
+
+def test_short_pause_in_climb_is_merged_into_one_thermal():
+    climb = [1000 + 2 * i for i in range(90)]
+    pause = [climb[-1]] * 30
+    climb2 = [pause[-1] + 2 * i for i in range(90)]
+    thermals = detect_thermals(_flight_from_altitudes(climb + pause + climb2))
+    assert len(thermals) == 1
+    assert thermals[0].gain_m == pytest.approx(356, abs=5)
+
+
+def test_long_glide_separates_thermals():
+    climb = [1000 + 2 * i for i in range(90)]
+    glide = [climb[-1] - i for i in range(120)]
+    climb2 = [glide[-1] + 2 * i for i in range(90)]
+    assert len(detect_thermals(_flight_from_altitudes(climb + glide + climb2))) == 2
