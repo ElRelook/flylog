@@ -89,3 +89,13 @@ def test_flight_summary_is_json_serializable(flight):
     assert data["track"]["t"][0] == 0
     assert len(data["thermals"]) == 3
     assert data["stats"]["max_alt"] > 1500
+
+
+def test_logbook_entry_for_web():
+    from flylog.export import logbook_entry
+
+    data = logbook_entry(EXAMPLE.read_text(encoding="utf-8"), "abc", "2026/vol.igc", max_points=100)
+    assert data["entry"]["id"] == "abc"
+    assert data["entry"]["path"] == "2026/vol.igc"
+    assert data["entry"]["thermals"] == 3
+    assert 100 <= len(data["track"]) <= 200

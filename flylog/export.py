@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime
 
-from .parser import Flight
+from .logbook import analyze_flight
+from .parser import Flight, parse_igc
 from .stats import compute_stats, vario
 from .thermals import Thermal, detect_thermals
 
@@ -51,4 +52,16 @@ def flight_summary(flight: Flight, min_climb: float = 0.5) -> dict:
         },
         "stats": stats_dict,
         "thermals": thermals_to_dicts(detect_thermals(flight, min_climb=min_climb), t0),
+    }
+
+
+def logbook_entry(text: str, file_id: str, path: str, max_points: int = 400) -> dict:
+    """One logbook line plus a lightweight track (for the map of all flights)."""
+    flight = parse_igc(text)
+    entry = analyze_flight(flight, file_id, path)
+    fixes = [f for f in flight.fixes if f.valid]
+    step = max(1, len(fixes) // max_points)
+    return {
+        "entry": asdict(entry),
+        "track": [[round(f.lat, 5), round(f.lon, 5)] for f in fixes[::step]],
     }

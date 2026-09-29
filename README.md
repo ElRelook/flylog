@@ -28,6 +28,15 @@ Glisse ton fichier `.igc` dans la page pour voir tes stats, la carte (topo ou sa
 
 L'interface n'a **pas de backend** : le package Python `flylog` tourne directement dans le navigateur grâce à [Pyodide](https://pyodide.org). Ton fichier n'est envoyé nulle part, et les calculs sont les mêmes que ceux de la ligne de commande, couverts par les tests.
 
+**Carnet de vol** : clique sur « Connecter mon dossier Syride » et choisis `Documents\Syride`, ou glisse ce dossier dans la page. Tu obtiens :
+
+- tes totaux et tes records (heures, distance, plafond, meilleur thermique…) ;
+- **toutes tes traces sur une seule carte**, avec tes sites de déco ;
+- tes heures de vol par mois ;
+- la liste de tes vols, triable. Un clic ouvre l'analyse détaillée du vol.
+
+Le carnet reste enregistré dans ton navigateur (IndexedDB), et Chrome ou Edge se souviennent du dossier : ensuite, un clic sur **Synchroniser** suffit pour récupérer tes nouveaux vols.
+
 Pour la lancer en local :
 
 ```bash
@@ -129,7 +138,6 @@ pytest
 - [ ] Détection des spirales (variation du cap), qui distingue thermique et dynamique
 - [ ] Estimation du vent à partir de la dérive en thermique
 - [ ] Calcul du score CFD / XContest (distance libre, triangle plat, FAI)
-- [ ] Carnet de vol dans l'interface web (graphique par mois, carte de tous les vols)
 - [ ] Import depuis le profil public Syride
 - [ ] Comparaison de plusieurs vols
 - [ ] Export GPX / KML (Google Earth)

@@ -18,6 +18,7 @@
     --border: #e2e8f0;
     --accent: #0284c7;
     --accent-soft: #e0f2fe;
+    --accent-strong: #075985;
     --thermal: #f59e0b;
     --thermal-soft: rgba(245, 158, 11, 0.16);
     --thermal-strong: rgba(245, 158, 11, 0.38);
@@ -42,6 +43,7 @@
       --border: #1f2c44;
       --accent: #38bdf8;
       --accent-soft: #0c2a42;
+      --accent-strong: #bae6fd;
       --thermal: #fbbf24;
       --thermal-soft: rgba(251, 191, 36, 0.14);
       --thermal-strong: rgba(251, 191, 36, 0.34);
@@ -66,6 +68,7 @@
     --border: #1f2c44;
     --accent: #38bdf8;
     --accent-soft: #0c2a42;
+    --accent-strong: #bae6fd;
     --thermal: #fbbf24;
     --thermal-soft: rgba(251, 191, 36, 0.14);
     --thermal-strong: rgba(251, 191, 36, 0.34);
@@ -203,11 +206,51 @@
   footer .wrap { padding: 20px 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
   footer a { color: var(--accent); }
 
+  /* Logbook */
+  #logbook[hidden] { display: none; }
+  #logbook { padding: 28px 0 48px; }
+  .lb-head { display: flex; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .lb-head h2 { margin: 0; font-size: 26px; letter-spacing: -.01em; }
+  .lb-head .meta { color: var(--muted); font-size: 14px; }
+  .lb-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  .lb-progress[hidden] { display: none; }
+  .lb-progress { margin-bottom: 20px; }
+  .lb-progress .bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .lb-progress .bar-fill { height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .15s; }
+  .lb-progress .text { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  #lb-status { font-size: 13px; color: var(--muted); margin: -8px 0 16px; }
+  #lb-status:empty { display: none; }
+  #lb-status.error { color: #dc2626; }
+  .lb-panels { display: grid; gap: 16px; }
+  #lb-map { height: 520px; background: var(--surface-2); }
+  .chart-wrap { position: relative; padding: 12px 12px 6px; }
+  #month-chart { width: 100%; height: 220px; display: block; }
+  #month-chart .bar { fill: var(--accent); }
+  #month-chart .col:hover .bar { fill: var(--accent-strong); }
+  #month-chart .hit { fill: transparent; }
+  #month-chart .grid { stroke: var(--grid); }
+  #month-chart text { fill: var(--muted); font: 11px Inter, sans-serif; }
+  #month-chart text.year { fill: var(--text); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+  table.flights { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .flights th { text-align: right; font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
+  .flights th.sorted { color: var(--text); }
+  .flights th:first-child, .flights td:first-child { text-align: left; }
+  .flights td { text-align: right; padding: 9px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .flights tbody tr { cursor: pointer; }
+  .flights tbody tr:hover, .flights tbody tr.hover { background: var(--accent-soft); }
+  .flights tbody tr:last-child td { border-bottom: 0; }
+  .site-pin { width: 22px; height: 22px; border-radius: 50%; background: #16a34a; color: #fff; border: 2px solid #fff; display: grid; place-items: center; font: 700 11px Inter, sans-serif; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  .link-btn { background: none; border: 0; padding: 0; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; }
+  .drop .alt { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .btn .count { background: var(--accent-soft); color: var(--accent-strong); border-radius: 6px; padding: 0 6px; font-size: 12px; }
+
   @media (max-width: 960px) {
     .cards { grid-template-columns: repeat(2, 1fr); }
     .main-grid { grid-template-columns: 1fr; }
     #map { height: 380px; }
     #thermal-list { height: 320px; }
+    #lb-map { height: 400px; }
   }
   @media (max-width: 520px) {
     .brand small { display: none; }
@@ -229,6 +272,10 @@
       FlyLog <small>analyse de vol libre</small>
     </div>
     <div class="spacer"></div>
+    <button class="btn" id="to-logbook" hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Carnet
+    </button>
     <button class="btn" id="new-flight" hidden>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       Autre vol
@@ -246,13 +293,19 @@
 
     <div class="drop" id="drop">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-      <h2>Glisse ton fichier .igc ici</h2>
-      <p>Syride, XCTrack, Flymaster, SeeYou… tous les instruments exportent en IGC.</p>
+      <h2>Glisse un vol .igc, ou tout ton dossier de vols</h2>
+      <p>Un fichier : l'analyse détaillée du vol. Un dossier (par exemple <b>Documents\Syride</b>) : ton carnet de vol complet, avec toutes tes traces sur une seule carte.</p>
       <div class="actions">
-        <button class="btn primary" id="pick">Choisir un fichier</button>
-        <button class="btn" id="example">Essayer avec un vol d'exemple</button>
+        <button class="btn primary" id="connect">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Connecter mon dossier Syride
+        </button>
+        <button class="btn" id="pick">Analyser un vol</button>
+        <button class="btn" id="resume" hidden></button>
       </div>
+      <div class="alt">ou <button class="link-btn" id="example">essaie avec un vol d'exemple</button></div>
       <input type="file" id="file" accept=".igc,.IGC" hidden>
+      <input type="file" id="dir" webkitdirectory multiple hidden>
       <div class="status" id="status"></div>
       <div class="privacy">🔒 Ton fichier est analysé dans ton navigateur et n'est envoyé nulle part.</div>
     </div>
@@ -309,6 +362,60 @@
   </div>
 </main>
 
+<main id="logbook" hidden>
+  <div class="wrap">
+    <div class="lb-head">
+      <div>
+        <h2>Mon carnet de vol</h2>
+        <div class="meta" id="lb-meta"></div>
+      </div>
+      <div class="lb-actions">
+        <button class="btn primary" id="lb-sync">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>
+          Synchroniser
+        </button>
+        <button class="btn" id="lb-change">Changer de dossier</button>
+        <button class="btn" id="lb-forget" title="Supprime le carnet enregistré dans ce navigateur">Oublier</button>
+      </div>
+    </div>
+    <div class="lb-progress" id="lb-progress" hidden>
+      <div class="bar-track"><div class="bar-fill" id="lb-bar"></div></div>
+      <div class="text" id="lb-progress-text"></div>
+    </div>
+    <div id="lb-status"></div>
+
+    <div class="cards" id="lb-cards"></div>
+
+    <div class="lb-panels">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Toutes mes traces</h3>
+          <span class="hint">survole une trace pour l'identifier, clique pour ouvrir le vol · points verts = décos</span>
+        </div>
+        <div id="lb-map"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Heures de vol par mois</h3>
+        </div>
+        <div class="chart-wrap">
+          <svg id="month-chart" role="img" aria-label="Heures de vol par mois"></svg>
+          <div class="tooltip" id="month-tip" hidden></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Mes vols</h3>
+          <span class="hint" id="lb-count"></span>
+          <div class="spacer"></div>
+          <span class="hint">🔒 enregistré uniquement dans ce navigateur</span>
+        </div>
+        <div class="table-scroll"><table class="flights" id="lb-table"></table></div>
+      </div>
+    </div>
+  </div>
+</main>
+
 <footer>
   <div class="wrap">
     <span>FlyLog · le même code Python que la ligne de commande, exécuté dans le navigateur avec Pyodide.</span>
@@ -321,7 +428,7 @@
 <script>
 "use strict";
 
-const PY_MODULES = ["__init__.py", "parser.py", "stats.py", "thermals.py", "export.py"];
+const PY_MODULES = ["__init__.py", "parser.py", "stats.py", "thermals.py", "logbook.py", "export.py"];
 const VARIO_COLORS = ["#1d4ed8", "#60a5fa", "#cbd5e1", "#fb923c", "#dc2626"];
 const $ = (id) => document.getElementById(id);
 
@@ -333,6 +440,9 @@ const setStatus = (text, kind = "") => {
   const el = $("status");
   el.className = "status " + kind;
   el.innerHTML = kind === "busy" ? `<span class="spinner"></span>${text}` : text;
+  // The hero status is hidden in the logbook view: mirror errors there.
+  const lb = $("lb-status");
+  if (lb && !$("logbook").hidden) { lb.className = kind; lb.textContent = kind === "error" ? text : ""; }
 };
 
 const pythonReady = (async () => {
@@ -363,9 +473,20 @@ def analyze(text, min_climb):
 def rethreshold(min_climb):
     t0 = next(f.time for f in _flight.fixes if f.valid)
     return json.dumps(thermals_to_dicts(detect_thermals(_flight, min_climb=min_climb), t0))
+
+from flylog.export import logbook_entry as _logbook_entry
+from flylog.logbook import ANALYSIS_VERSION
+
+def logbook_entry(text, file_id, path):
+    return json.dumps(_logbook_entry(text, file_id, path))
 `);
   setStatus("Prêt ✓");
-  return { analyze: py.globals.get("analyze"), rethreshold: py.globals.get("rethreshold") };
+  return {
+    analyze: py.globals.get("analyze"),
+    rethreshold: py.globals.get("rethreshold"),
+    logbookEntry: py.globals.get("logbook_entry"),
+    version: py.globals.get("ANALYSIS_VERSION"),
+  };
 })();
 pythonReady.catch((e) => setStatus(e.message, "error"));
 
@@ -388,7 +509,7 @@ async function analyzeText(text) {
 const nf = (v, d = 0) => v.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const clockAt = (s) => new Date(state.startMs + s * 1000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const duration = (s) => {
-  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  const total = Math.round(s / 60), h = Math.floor(total / 60), m = total % 60;
   return h ? `${h}<small>h</small>${String(m).padStart(2, "0")}` : `${m}<small>min</small>`;
 };
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -412,10 +533,7 @@ function show(data) {
   meta.push(`Décollage <b>${clockAt(0)}</b> · Atterrissage <b>${clockAt(data.track.t.at(-1))}</b>`);
   $("flight-meta").innerHTML = meta.map((m) => `<span>${m}</span>`).join("");
 
-  $("hero").hidden = true;
-  $("results").hidden = false;
-  $("new-flight").hidden = false;
-  window.scrollTo(0, 0);
+  showView("results");
 
   renderCards();
   renderMap();
@@ -704,7 +822,7 @@ $("example").onclick = async () => {
   e.preventDefault();
   if (type === "drop" || !e.relatedTarget) $("drop").classList.remove("over");
 }));
-document.addEventListener("drop", (e) => readFile(e.dataTransfer.files[0]));
+document.addEventListener("drop", (e) => onDrop(e)); // file → flight view, folder → logbook (logbook.js)
 
 let thresholdTimer;
 $("min-climb").oninput = () => {
@@ -739,5 +857,6 @@ try {
   if (saved) document.documentElement.dataset.theme = saved;
 } catch {}
 </script>
+<script src="logbook.js"></script>
 </body>
 </html>

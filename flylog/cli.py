@@ -11,8 +11,8 @@ from .thermals import detect_thermals
 
 
 def _format_duration(seconds: float) -> str:
-    h, rest = divmod(int(seconds), 3600)
-    return f"{h}h{rest // 60:02d}"
+    h, m = divmod(round(seconds / 60), 60)
+    return f"{h}h{m:02d}"
 
 
 def main(argv: list[str] | None = None) -> int:

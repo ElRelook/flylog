@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .parser import read_igc
+from .parser import Flight, read_igc
 from .stats import compute_stats
 from .thermals import detect_thermals
 
@@ -59,13 +59,16 @@ def _file_id(path: Path) -> str:
 
 
 def analyze_file(path: Path, file_id: str) -> LogEntry:
-    flight = read_igc(path)
+    return analyze_flight(read_igc(path), file_id, str(path))
+
+
+def analyze_flight(flight: Flight, file_id: str, path: str) -> LogEntry:
     stats = compute_stats(flight)
     thermals = detect_thermals(flight)
     first = next(f for f in flight.fixes if f.valid)
     return LogEntry(
         id=file_id,
-        path=str(path),
+        path=path,
         date=flight.date.isoformat() if flight.date else None,
         takeoff_time=first.time.isoformat(),
         duration_s=stats.duration.total_seconds(),

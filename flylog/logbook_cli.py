@@ -10,8 +10,8 @@ from . import logbook
 
 
 def _duration(seconds: float) -> str:
-    h, rest = divmod(int(seconds), 3600)
-    return f"{h}h{rest // 60:02d}"
+    h, m = divmod(round(seconds / 60), 60)
+    return f"{h}h{m:02d}"
 
 
 def _date(entry: logbook.LogEntry) -> str:
