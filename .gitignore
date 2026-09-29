@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+# Generated outputs (except the ones shown in the README)
+*.html
+*.png
+!docs/*.png
