@@ -6,7 +6,9 @@ from dataclasses import asdict
 from datetime import datetime
 
 from .logbook import analyze_flight
+from .metrics import estimate_wind, notable_moments, piloting_metrics
 from .parser import Flight, parse_igc
+from .score import best_scores
 from .stats import compute_stats, vario
 from .thermals import Thermal, detect_thermals
 
@@ -37,6 +39,11 @@ def flight_summary(flight: Flight, min_climb: float = 0.5) -> dict:
 
     stats_dict = asdict(stats)
     stats_dict["duration"] = stats.duration.total_seconds()
+    thermals = detect_thermals(flight, min_climb=min_climb)
+    metrics = asdict(piloting_metrics(flight, thermals))
+    if metrics["wind"]:
+        metrics["wind"]["time"] = metrics["wind"]["time"].isoformat()
+    rel = lambda t: (t - t0).total_seconds()  # noqa: E731
 
     return {
         "date": flight.date.isoformat() if flight.date else None,
@@ -51,7 +58,24 @@ def flight_summary(flight: Flight, min_climb: float = 0.5) -> dict:
             "vario": [round(v, 2) for v in vario(fixes, 10)],
         },
         "stats": stats_dict,
-        "thermals": thermals_to_dicts(detect_thermals(flight, min_climb=min_climb), t0),
+        "thermals": thermals_to_dicts(thermals, t0),
+        "metrics": metrics,
+        "winds": [
+            {"t": rel(w.time), "alt": w.alt, "speed_kmh": round(w.speed_kmh, 1),
+             "direction_deg": round(w.direction_deg)}
+            for w in estimate_wind(flight, thermals)
+        ],
+        "moments": [
+            {"kind": m.kind, "label": m.label, "t": rel(m.time), "value": m.value,
+             "lat": m.lat, "lon": m.lon, "alt": m.alt, "duration_s": m.duration_s}
+            for m in notable_moments(flight)
+        ],
+        "scores": [
+            {"kind": s.kind, "label": s.label, "distance_km": round(s.distance_km, 2),
+             "points": round(s.points, 2), "turnpoints": s.turnpoints,
+             "closing_km": round(s.closing_km, 2), "closing": s.closing}
+            for s in best_scores(flight)
+        ],
     }
 
 

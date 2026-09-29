@@ -206,6 +206,42 @@
   footer .wrap { padding: 20px 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
   footer a { color: var(--accent); }
 
+  /* Flight extras */
+  .flight-head .lb-actions { align-self: center; }
+  .map-wrap { position: relative; }
+  .hud {
+    position: absolute; left: 56px; top: 12px; z-index: 500; pointer-events: none;
+    background: rgba(10, 14, 24, .72); color: #fff; border-radius: 12px; padding: 8px 12px;
+    font-size: 13px; font-variant-numeric: tabular-nums; line-height: 1.4;
+  }
+  .hud b { font-size: 20px; }
+  .hud[hidden] { display: none; }
+  .replay { display: flex; align-items: center; gap: 8px; }
+  .replay input[type=range] { width: 160px; accent-color: var(--accent); }
+  .replay select { font: inherit; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
+  .btn.icon { padding: 7px 9px; }
+  .extras-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+  dl.kv { margin: 0; padding: 8px 16px 12px; display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 14px; }
+  dl.kv dt { color: var(--muted); }
+  dl.kv dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wind-arrow { display: inline-block; vertical-align: -3px; margin-right: 4px; color: var(--accent); }
+  ul.pick-list { list-style: none; margin: 0; padding: 6px; }
+  ul.pick-list li { display: flex; gap: 10px; align-items: baseline; padding: 8px 10px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; font-size: 14px; }
+  ul.pick-list li:hover { background: var(--surface-2); }
+  ul.pick-list li.selected { background: var(--accent-soft); border-color: var(--accent); }
+  ul.pick-list .main { flex: 1; }
+  ul.pick-list .val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  ul.pick-list .sub { display: block; color: var(--muted); font-size: 12px; }
+  .airspace-panel { margin-top: 16px; }
+  .airspace-body { padding: 12px 16px 16px; }
+  .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .airspace-result { font-size: 13px; color: var(--muted); }
+  .airspace-result a { color: var(--accent); }
+  .airspace-result ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .airspace-result li { padding: 8px 10px; border-radius: 10px; background: rgba(220, 38, 38, .08); border: 1px solid rgba(220, 38, 38, .35); color: var(--text); cursor: pointer; }
+  .airspace-result li.uncertain { background: var(--thermal-soft); border-color: var(--thermal); }
+  .airspace-result .ok { color: #16a34a; font-weight: 600; }
+
   /* Logbook */
   #logbook[hidden] { display: none; }
   #logbook { padding: 28px 0 48px; }
@@ -251,6 +287,12 @@
     #map { height: 380px; }
     #thermal-list { height: 320px; }
     #lb-map { height: 400px; }
+    .extras-grid { grid-template-columns: 1fr; }
+    .replay input[type=range] { width: 90px; }
+  }
+  @media (max-width: 600px) {
+    header .btn .label { display: none; }
+    header .btn { padding: 8px 10px; }
   }
   @media (max-width: 520px) {
     .brand small { display: none; }
@@ -274,11 +316,11 @@
     <div class="spacer"></div>
     <button class="btn" id="to-logbook" hidden>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-      Carnet
+      <span class="label">Carnet</span>
     </button>
     <button class="btn" id="new-flight" hidden>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      Autre vol
+      <span class="label">Autre vol</span>
     </button>
     <button class="btn" id="theme" aria-label="Changer de thème" title="Thème clair / sombre">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -324,6 +366,14 @@
         <h2 id="flight-title">Vol</h2>
         <div class="meta" id="flight-meta"></div>
       </div>
+      <div class="lb-actions">
+        <button class="btn primary" id="share-image">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+          Image à partager
+        </button>
+        <button class="btn" id="export-gpx">GPX</button>
+        <button class="btn" id="export-kml" title="Google Earth, trace en 3D">KML</button>
+      </div>
     </div>
 
     <div class="cards" id="cards"></div>
@@ -333,8 +383,24 @@
         <div class="panel-head">
           <h3>Trace</h3>
           <span class="hint">couleur = vario</span>
+          <div class="spacer"></div>
+          <div class="replay">
+            <button class="btn icon" id="replay-play" title="Rejouer le vol" aria-label="Rejouer le vol">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+            </button>
+            <input type="range" id="replay-pos" min="0" max="1000" value="0" aria-label="Position dans le vol">
+            <select id="replay-speed" aria-label="Vitesse de lecture">
+              <option value="10">×10</option>
+              <option value="30" selected>×30</option>
+              <option value="60">×60</option>
+              <option value="120">×120</option>
+            </select>
+          </div>
         </div>
-        <div id="map"></div>
+        <div class="map-wrap">
+          <div id="map"></div>
+          <div class="hud" id="hud" hidden></div>
+        </div>
       </div>
       <div class="panel thermals">
         <div class="panel-head">
@@ -357,6 +423,36 @@
       <div class="profile-wrap">
         <canvas id="profile"></canvas>
         <div class="tooltip" id="tooltip" hidden></div>
+      </div>
+    </div>
+
+    <div class="extras-grid">
+      <div class="panel">
+        <div class="panel-head"><h3>Pilotage</h3><span class="hint">estimé à partir du GPS</span></div>
+        <dl class="kv" id="piloting"></dl>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Score</h3><span class="hint">estimation type XContest</span></div>
+        <ul class="pick-list" id="scores"></ul>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Moments forts</h3></div>
+        <ul class="pick-list" id="moments"></ul>
+      </div>
+    </div>
+
+    <div class="panel airspace-panel">
+      <div class="panel-head">
+        <h3>Espaces aériens</h3>
+        <span class="hint">zones contraignantes pour un parapente (classes E et G ignorées)</span>
+      </div>
+      <div class="airspace-body">
+        <div class="actions-row">
+          <button class="btn" id="airspace-fr">Vérifier (France)</button>
+          <button class="btn" id="airspace-file">Charger un fichier OpenAir…</button>
+          <input type="file" id="airspace-input" accept=".txt,.air,.openair" hidden>
+        </div>
+        <div id="airspace-result" class="airspace-result">Données France : <a href="https://github.com/planeur-net/airspace" target="_blank" rel="noopener">planeur-net/airspace</a> (FFVP, d'après l'AIP). Indicatif : vérifie toujours les NOTAM et les cartes officielles.</div>
       </div>
     </div>
   </div>
@@ -428,7 +524,8 @@
 <script>
 "use strict";
 
-const PY_MODULES = ["__init__.py", "parser.py", "stats.py", "thermals.py", "logbook.py", "export.py"];
+const PY_MODULES = ["__init__.py", "geo.py", "parser.py", "stats.py", "thermals.py", "metrics.py",
+  "score.py", "airspace.py", "formats.py", "logbook.py", "export.py"];
 const VARIO_COLORS = ["#1d4ed8", "#60a5fa", "#cbd5e1", "#fb923c", "#dc2626"];
 const $ = (id) => document.getElementById(id);
 
@@ -479,12 +576,38 @@ from flylog.logbook import ANALYSIS_VERSION
 
 def logbook_entry(text, file_id, path):
     return json.dumps(_logbook_entry(text, file_id, path))
+
+from flylog.formats import to_gpx, to_kml
+from flylog.airspace import parse_openair, check_airspaces
+
+def export_gpx():
+    return to_gpx(_flight)
+
+def export_kml():
+    return to_kml(_flight)
+
+_airspace_cache = {}
+
+def airspace_check(text, all_airspaces):
+    spaces = _airspace_cache.get(len(text))
+    if spaces is None:
+        spaces = _airspace_cache[len(text)] = parse_openair(text)
+    t0 = next(f.time for f in _flight.fixes if f.valid)
+    return json.dumps([{
+        "name": i.airspace.name, "label": i.airspace.label,
+        "floor": str(i.airspace.floor), "ceiling": str(i.airspace.ceiling),
+        "start_s": (i.start - t0).total_seconds(), "end_s": (i.end - t0).total_seconds(),
+        "alt": i.alt, "uncertain": i.uncertain, "points": i.airspace.points,
+    } for i in check_airspaces(_flight, spaces, all_airspaces)])
 `);
   setStatus("Prêt ✓");
   return {
     analyze: py.globals.get("analyze"),
     rethreshold: py.globals.get("rethreshold"),
     logbookEntry: py.globals.get("logbook_entry"),
+    exportGpx: py.globals.get("export_gpx"),
+    exportKml: py.globals.get("export_kml"),
+    airspaceCheck: py.globals.get("airspace_check"),
     version: py.globals.get("ANALYSIS_VERSION"),
   };
 })();
@@ -539,6 +662,7 @@ function show(data) {
   renderMap();
   renderThermals();
   drawProfile();
+  renderExtras(data); // flight-extras.js
 }
 
 function renderCards() {
@@ -858,5 +982,6 @@ try {
 } catch {}
 </script>
 <script src="logbook.js"></script>
+<script src="flight-extras.js"></script>
 </body>
 </html>

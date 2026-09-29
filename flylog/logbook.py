@@ -4,15 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from .metrics import piloting_metrics
 from .parser import Flight, read_igc
+from .score import best_scores
 from .stats import compute_stats
 from .thermals import detect_thermals
 
 # Bump when the analysis changes: the next sync re-analyzes every flight.
-ANALYSIS_VERSION = 2
+ANALYSIS_VERSION = 3
 
 
 def default_source() -> Path:
@@ -43,6 +45,16 @@ class LogEntry:
     glider: str | None
     takeoff_lat: float
     takeoff_lon: float
+    # Added in analysis version 3 (defaults keep older logbooks loadable).
+    score_points: float = 0.0
+    score_kind: str = ""
+    avg_thermal_climb: float | None = None
+    glide_ratio: float | None = None
+    circling_pct: float = 0.0
+    left_turn_pct: float = 0.0
+    max_g: float = 1.0
+    # [lat, lon, avg climb m/s, gain m, top alt m, start minute of day UTC]
+    thermal_spots: list[list[float]] = field(default_factory=list)
 
 
 @dataclass
@@ -66,6 +78,8 @@ def analyze_flight(flight: Flight, file_id: str, path: str) -> LogEntry:
     stats = compute_stats(flight)
     thermals = detect_thermals(flight)
     first = next(f for f in flight.fixes if f.valid)
+    metrics = piloting_metrics(flight, thermals)
+    scores = best_scores(flight)
     return LogEntry(
         id=file_id,
         path=path,
@@ -83,7 +97,23 @@ def analyze_flight(flight: Flight, file_id: str, path: str) -> LogEntry:
         glider=flight.glider,
         takeoff_lat=round(first.lat, 5),
         takeoff_lon=round(first.lon, 5),
+        score_points=round(scores[0].points, 1) if scores else 0.0,
+        score_kind=scores[0].kind if scores else "",
+        avg_thermal_climb=_round(metrics.avg_thermal_climb, 2),
+        glide_ratio=_round(metrics.avg_glide_ratio, 1),
+        circling_pct=round(metrics.circling_pct, 1),
+        left_turn_pct=round(metrics.left_turn_pct, 1),
+        max_g=round(metrics.max_g, 2),
+        thermal_spots=[
+            [round(t.lat, 5), round(t.lon, 5), round(t.avg_climb, 2), t.gain_m, t.top_alt,
+             t.start.hour * 60 + t.start.minute]
+            for t in thermals
+        ],
     )
+
+
+def _round(value: float | None, digits: int) -> float | None:
+    return None if value is None else round(value, digits)
 
 
 def _read(db: Path) -> dict:
