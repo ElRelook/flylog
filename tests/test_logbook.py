@@ -56,7 +56,7 @@ def test_totals(syride_dir, tmp_path):
 
 def test_cli_sync_and_carnet(syride_dir, tmp_path, capsys):
     db = str(tmp_path / "carnet.json")
-    assert main(["sync", "--source", str(syride_dir), "--db", db]) == 0
+    assert main(["sync", "--source", str(syride_dir), "--db", db, "--no-sites"]) == 0
     assert "1 nouveau(x) vol(s)" in capsys.readouterr().out
     assert main(["carnet", "--db", db]) == 0
     out = capsys.readouterr().out
@@ -86,3 +86,45 @@ def test_outdated_logbook_is_rebuilt(syride_dir, tmp_path):
     assert result.rebuilt
     assert len(result.added) == 1
     assert list(logbook.load(db).values())[0].duration_s < 3600
+
+
+class FakeNamer:
+    """Stands in for sites.SiteNamer: no network in tests."""
+
+    online = True
+
+    def __init__(self):
+        self.calls = 0
+
+    def name(self, lat, lon):
+        self.calls += 1
+        return "Saint Hilaire du Touvet"
+
+    def save(self):
+        pass
+
+
+def test_sync_names_takeoff_sites_once(syride_dir, tmp_path):
+    db = tmp_path / "carnet.json"
+    namer = FakeNamer()
+    logbook.sync(syride_dir, db, namer)
+    assert list(logbook.load(db).values())[0].site == "Saint Hilaire du Touvet"
+    logbook.sync(syride_dir, db, namer)
+    assert namer.calls == 1  # already named: no new lookup
+
+
+def test_site_namer_cache_and_offline(tmp_path, monkeypatch):
+    from flylog.sites import SiteNamer
+
+    namer = SiteNamer(cache=tmp_path / "sites.json")
+    monkeypatch.setattr(namer, "fetch", lambda lat, lon: "Lumbin")
+    assert namer.name(45.3, 5.9) == "Lumbin"
+    namer.save()
+
+    offline = SiteNamer(cache=tmp_path / "sites.json")
+    def boom(lat, lon):
+        raise OSError("offline")
+    monkeypatch.setattr(offline, "fetch", boom)
+    assert offline.name(45.3, 5.9) == "Lumbin"  # from cache
+    assert offline.name(44.0, 6.0) is None      # unknown and offline
+    assert not offline.online

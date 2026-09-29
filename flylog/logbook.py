@@ -55,6 +55,7 @@ class LogEntry:
     max_g: float = 1.0
     # [lat, lon, avg climb m/s, gain m, top alt m, start minute of day UTC]
     thermal_spots: list[list[float]] = field(default_factory=list)
+    site: str | None = None  # takeoff name (ParaglidingEarth), filled by sync
 
 
 @dataclass
@@ -138,14 +139,16 @@ def save(db: Path, entries: dict[str, LogEntry]) -> None:
                   encoding="utf-8")
 
 
-def sync(source: Path, db: Path) -> SyncResult:
+def sync(source: Path, db: Path, namer=None) -> SyncResult:
     """Add every new .igc file found under `source` to the logbook stored in `db`.
 
     If the logbook was built by an older version of the analysis, every flight
-    is analyzed again.
+    is analyzed again. With a `namer` (sites.SiteNamer), unnamed takeoffs get
+    their site name.
     """
     rebuild = is_outdated(db)
-    entries = {} if rebuild else load(db)
+    previous = load(db)
+    entries = {} if rebuild else dict(previous)
     added: list[LogEntry] = []
     errors: list[tuple[str, str]] = []
     known = 0
@@ -160,10 +163,19 @@ def sync(source: Path, db: Path) -> SyncResult:
         except (ValueError, StopIteration) as e:
             errors.append((str(path), str(e) or "aucun point GPS valide"))
             continue
+        entry.site = previous[file_id].site if file_id in previous else None
         entries[file_id] = entry
         added.append(entry)
 
-    if added or rebuild:
+    named = 0
+    if namer is not None:
+        for entry in entries.values():
+            if entry.site is None:
+                entry.site = namer.name(entry.takeoff_lat, entry.takeoff_lon)
+                named += entry.site is not None
+        namer.save()
+
+    if added or rebuild or named:
         save(db, entries)
     return SyncResult(added=added, known=known, errors=errors, rebuilt=rebuild)
 
