@@ -22,8 +22,12 @@ def save_map(flight: Flight, thermals: list[Thermal], path: str | Path) -> None:
         sum(p[1] for p in points) / len(points),
     )
 
-    m = folium.Map(location=center, zoom_start=13, tiles="OpenTopoMap")
-    folium.TileLayer("OpenStreetMap").add_to(m)
+    # Esri tiles work from a local file:// page, unlike OpenStreetMap's servers
+    # which reject requests without a Referer header (HTTP 403).
+    m = folium.Map(location=center, zoom_start=13, tiles=None)
+    esri = "https://server.arcgisonline.com/ArcGIS/rest/services/{}/MapServer/tile/{{z}}/{{y}}/{{x}}"
+    folium.TileLayer(esri.format("World_Topo_Map"), attr="Tiles © Esri", name="Topo").add_to(m)
+    folium.TileLayer(esri.format("World_Imagery"), attr="Tiles © Esri", name="Satellite").add_to(m)
 
     # Track colored by climb rate: blue = sink, red = climb.
     rates = [max(-3.0, min(3.0, r)) for r in vario(fixes, 10)]
