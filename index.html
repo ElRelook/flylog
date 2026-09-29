@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FlyLog</title>
 <meta name="description" content="Analyse ta trace de parapente (IGC) : statistiques, thermiques, carte et profil d'altitude, directement dans ton navigateur.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0284c7">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -1076,6 +1080,33 @@ $("theme").onclick = () => {
   try { localStorage.setItem("flylog-theme", root.dataset.theme); } catch {}
   drawProfile();
 };
+/* ---------- Installable app (PWA) ---------- */
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  navigator.serviceWorker.register("sw.js").catch(() => { /* offline mode unavailable */ });
+}
+// .igc opened with the installed app (desktop file handler).
+if ("launchQueue" in window) {
+  window.launchQueue.setConsumer(async (params) => {
+    const handle = params.files?.[0];
+    if (handle) readFile(await handle.getFile());
+  });
+}
+// .igc shared from another app (Android share sheet), stashed by the service worker.
+if (new URLSearchParams(location.search).has("shared")) {
+  (async () => {
+    try {
+      const cache = await caches.open("flylog-share");
+      const res = await cache.match("shared.igc");
+      if (res) {
+        analyzeText(await res.text());
+        await cache.delete("shared.igc");
+      }
+    } catch { /* nothing shared */ }
+    history.replaceState(null, "", location.pathname);
+  })();
+}
+
 try {
   const saved = localStorage.getItem("flylog-theme");
   if (saved) document.documentElement.dataset.theme = saved;

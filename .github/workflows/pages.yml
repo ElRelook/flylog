@@ -25,7 +25,8 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/flylog _site/examples
-          cp index.html *.js _site/
+          cp index.html *.js manifest.webmanifest _site/
+          cp -r icons _site/
           cp flylog/*.py _site/flylog/
           cp examples/vol_exemple.igc _site/examples/
       - uses: actions/upload-pages-artifact@v3
