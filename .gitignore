@@ -9,3 +9,5 @@ dist/
 *.html
 *.png
 !docs/*.png
+!index.html
+.claude/

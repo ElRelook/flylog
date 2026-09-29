@@ -15,8 +15,26 @@ Tu donnes à FlyLog le fichier `.igc` de ton vario ou de ton application de vol.
 - 📄 **Parser IGC** sans dépendance (en-têtes, points GPS, passage de minuit, hémisphères S/W)
 - 📊 **Statistiques** : durée, distance parcourue, altitudes, gain cumulé, vario max, taux de chute, vitesse sol
 - 🌀 **Détection des thermiques** : gain, taux de montée moyen, durée, plafond
-- 🗺️ **Carte interactive** (OpenTopoMap) avec la trace colorée selon le vario et les thermiques en surbrillance
+- 🖥️ **Interface web** sans serveur (Python dans le navigateur via Pyodide)
+- 🗺️ **Carte interactive** (topo / satellite) avec la trace colorée selon le vario et les thermiques en surbrillance
 - 📈 **Profil d'altitude** avec les phases de thermique mises en évidence
+
+## Interface web
+
+👉 **Démo en ligne : https://VOTRE-PSEUDO.github.io/flylog/**
+
+Glisse ton fichier `.igc` dans la page pour voir tes stats, la carte (topo ou satellite) avec la trace colorée selon le vario, la liste des thermiques et le profil d'altitude. Au survol du profil, ta position s'affiche sur la carte. Le seuil de détection des thermiques se règle en direct.
+
+L'interface n'a **pas de backend** : le package Python `flylog` tourne directement dans le navigateur grâce à [Pyodide](https://pyodide.org). Ton fichier n'est envoyé nulle part, et les calculs sont les mêmes que ceux de la ligne de commande, couverts par les tests.
+
+Pour la lancer en local :
+
+```bash
+python -m http.server 8000
+# puis ouvre http://localhost:8000
+```
+
+Mise en ligne : dans *Settings → Pages* du dépôt GitHub, choisis la source **GitHub Actions**. Le workflow `pages.yml` publie ensuite le site à chaque push.
 
 ## Installation
 
@@ -68,7 +86,7 @@ for t in detect_thermals(vol, min_climb=1.0):
 | Distance | Formule de haversine entre chaque point GPS |
 | Vario | Pente de l'altitude sur une fenêtre glissante (10 s pour les stats, 20 s pour les thermiques) |
 | Gain cumulé | Somme des montées sur l'altitude lissée (moyenne mobile), pour ne pas compter le bruit GPS |
-| Thermiques | Segments où le vario moyen reste > 0,5 m/s pendant au moins 30 s avec au moins 30 m de gain |
+| Thermiques | Segments où le vario moyen reste > 0,5 m/s pendant au moins 30 s avec au moins 30 m de gain ; deux montées séparées de moins de 45 s sont fusionnées |
 
 ## Vol d'exemple
 

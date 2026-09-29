@@ -76,3 +76,16 @@ def test_long_glide_separates_thermals():
     glide = [climb[-1] - i for i in range(120)]
     climb2 = [glide[-1] + 2 * i for i in range(90)]
     assert len(detect_thermals(_flight_from_altitudes(climb + glide + climb2))) == 2
+
+
+def test_flight_summary_is_json_serializable(flight):
+    import json
+
+    from flylog.export import flight_summary
+
+    data = json.loads(json.dumps(flight_summary(flight)))
+    assert data["pilot"] == "Pilote Demo"
+    assert len(data["track"]["t"]) == len(data["track"]["alt"]) == len(data["track"]["vario"])
+    assert data["track"]["t"][0] == 0
+    assert len(data["thermals"]) == 3
+    assert data["stats"]["max_alt"] > 1500
