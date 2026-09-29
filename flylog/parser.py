@@ -75,9 +75,14 @@ def parse_igc(text: str) -> Flight:
 
         if line.startswith("B") and len(line) >= 35:
             t = datetime.combine(day, datetime.strptime(line[1:7], "%H%M%S").time())
-            # Flights crossing midnight UTC: keep timestamps increasing.
-            if previous and t < previous:
-                t += timedelta(days=1)
+            if previous and t <= previous:
+                if previous - t > timedelta(hours=12):
+                    # Flight crossing midnight UTC.
+                    day += timedelta(days=1)
+                    t += timedelta(days=1)
+                else:
+                    # GPS glitch: time going back a few seconds, or duplicate fix.
+                    continue
             previous = t
             flight.fixes.append(
                 Fix(

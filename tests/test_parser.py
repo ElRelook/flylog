@@ -45,5 +45,19 @@ def test_midnight_rollover():
     assert fixes[3].time.date() == date(2026, 9, 19)
 
 
+def test_small_time_glitch_is_dropped_not_a_new_day():
+    # Seen on a real Syride file: the clock jumps back 9 s mid-flight.
+    igc = """\
+HFDTE090526
+B1236154518390N00553220EA0097800990
+B1236164518390N00553220EA0097800990
+B1236074518390N00553220EA0097800990
+B1236174518390N00553220EA0097800990
+"""
+    fixes = parse_igc(igc).fixes
+    assert len(fixes) == 3
+    assert fixes[-1].time == datetime(2026, 5, 9, 12, 36, 17)
+
+
 def test_old_date_header_format():
     assert parse_igc("HFDTE010725\n").date == date(2025, 7, 1)
