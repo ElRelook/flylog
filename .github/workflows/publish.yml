@@ -1,0 +1,23 @@
+name: publish
+
+# Publishes the package to PyPI when a GitHub release is published.
+# One-time setup on pypi.org: add a "trusted publisher" for this repository
+# (owner ElRelook, repo flylog, workflow publish.yml, environment pypi).
+on:
+  release:
+    types: [published]
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # trusted publishing: no API token stored in the repo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1

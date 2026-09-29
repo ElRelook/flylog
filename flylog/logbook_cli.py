@@ -52,6 +52,7 @@ def cmd_carnet(args: argparse.Namespace) -> int:
         return 1
 
     t = logbook.totals(entries)
+    assert t.best_alt and t.longest and t.farthest  # the logbook is not empty
     print(f"\n  Carnet de vol : {t.flights} vols, {_duration(t.duration_s)} de vol "
           f"depuis le {_date(entries[0])}\n")
     print(f"  Distance totale     {t.distance_km:,.0f} km".replace(",", " "))

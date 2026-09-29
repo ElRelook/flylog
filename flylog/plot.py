@@ -58,13 +58,14 @@ def save_profile(flight: Flight, thermals: list[Thermal], path: str | Path) -> N
     import matplotlib.pyplot as plt
 
     fixes = [f for f in flight.fixes if f.valid]
-    times = [f.time for f in fixes]
+    times = mdates.date2num([f.time for f in fixes])
 
     fig, ax = plt.subplots(figsize=(11, 4))
     ax.plot(times, [f.alt for f in fixes], color="#2166ac", linewidth=1.5)
     ax.fill_between(times, [f.alt for f in fixes], color="#2166ac", alpha=0.1)
     for t in thermals:
-        ax.axvspan(t.start, t.end, color="#e08214", alpha=0.25)
+        ax.axvspan(float(mdates.date2num(t.start)), float(mdates.date2num(t.end)), color="#e08214", alpha=0.25)
+    ax.xaxis_date()
 
     ax.set_ylabel("Altitude (m)")
     ax.set_title("Profil d'altitude (zones orange = thermiques)")

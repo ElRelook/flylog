@@ -1,41 +1,47 @@
 # 🪂 FlyLog
 
-![tests](https://github.com/ElRelook/flylog/actions/workflows/tests.yml/badge.svg)
+[![tests](https://github.com/ElRelook/flylog/actions/workflows/tests.yml/badge.svg)](https://github.com/ElRelook/flylog/actions/workflows/tests.yml)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![licence](https://img.shields.io/badge/licence-MIT-green)
+[![démo](https://img.shields.io/badge/démo-en%20ligne-0284c7)](https://elrelook.github.io/flylog/)
 
-**Analyseur de traces de vol libre (parapente, delta) au format IGC.**
+*[English version](README.en.md)*
 
-Tu donnes à FlyLog le fichier `.igc` de ton vario ou de ton application de vol. Il te sort les statistiques du vol, détecte automatiquement les thermiques et génère une carte interactive et un profil d'altitude.
+**Analyse de traces de vol libre (parapente, delta) au format IGC** : statistiques, thermiques, vent, score, espaces aériens, carnet de vol et incrustation vidéo.
 
-![Profil d'altitude](docs/profil.png)
+👉 **[Essayer en ligne](https://elrelook.github.io/flylog/)** · [un vol d'exemple](https://elrelook.github.io/flylog/?demo=vol) · [un carnet de démo](https://elrelook.github.io/flylog/?demo=carnet)
+
+![Analyse d'un vol](docs/capture-vol.png)
 
 ## Fonctionnalités
 
-- 📄 **Parser IGC** sans dépendance (en-têtes, points GPS, passage de minuit, hémisphères S/W)
-- 📒 **Carnet de vol** synchronisé avec le dossier Syride (ou tout dossier d'IGC)
-- 📊 **Statistiques** : durée, distance parcourue, altitudes, gain cumulé, vario max, taux de chute, vitesse sol
-- 🌀 **Détection des thermiques** : gain, taux de montée moyen, durée, plafond
-- 🖥️ **Interface web** sans serveur (Python dans le navigateur via Pyodide)
-- 🗺️ **Carte interactive** (topo / satellite) avec la trace colorée selon le vario et les thermiques en surbrillance
-- 📈 **Profil d'altitude** avec les phases de thermique mises en évidence
+**Analyse d'un vol**
+- 📊 Statistiques : durée, distance, plafond, gain cumulé, vario, vitesse
+- 🌀 Détection des thermiques (montée, durée, plafond), avec seuil réglable
+- 🧭 Pilotage : temps en virage, virages à gauche ou à droite, finesse sol en transition, facteur de charge
+- 💨 **Vent estimé** à partir de la dérive en thermique
+- 🏆 **Score type XContest** : distance libre à 3 points, triangle plat, triangle FAI
+- ⚠️ **Espaces aériens** : pénétrations détectées à partir d'un fichier OpenAir (données France de [planeur-net](https://github.com/planeur-net/airspace))
+- ⚡ Moments forts : plus forte montée et plus forte descente, vitesse max, spirales
+- ▶️ Rejeu animé du vol, export GPX et KML (Google Earth 3D), **image à partager**
+
+**Carnet de vol**
+- 📒 Synchronisation avec le dossier où **Syride** copie tes vols (ou n'importe quel dossier d'IGC)
+- 🗺️ **Toutes tes traces sur une seule carte**, avec la **carte des thermiques** de tous tes vols
+- 📈 Progression vol après vol, heures par mois, objectif annuel, 18 badges
+- 🆚 **Comparaison de deux vols** rejoués côte à côte
+- 📍 Noms des sites de déco (ParaglidingEarth)
+
+**Incrustation vidéo** : une vidéo transparente (vario, altitude, vitesse, mini-carte, profil) à poser sur tes images GoPro ou Insta360, calée automatiquement sur l'heure de tournage.
+
+![Carnet de vol](docs/capture-carnet.png)
 
 ## Interface web
 
-👉 **Démo en ligne : https://ElRelook.github.io/flylog/**
+L'interface **n'a pas de serveur** : le package Python `flylog` tourne directement dans le navigateur grâce à [Pyodide](https://pyodide.org). Les calculs sont donc les mêmes qu'en ligne de commande, et couverts par les tests. **Tes fichiers ne quittent jamais ton ordinateur**, et ton carnet reste enregistré dans ton navigateur.
 
-Glisse ton fichier `.igc` dans la page pour voir tes stats, la carte (topo ou satellite) avec la trace colorée selon le vario, la liste des thermiques et le profil d'altitude. Au survol du profil, ta position s'affiche sur la carte. Le seuil de détection des thermiques se règle en direct.
-
-L'interface n'a **pas de backend** : le package Python `flylog` tourne directement dans le navigateur grâce à [Pyodide](https://pyodide.org). Ton fichier n'est envoyé nulle part, et les calculs sont les mêmes que ceux de la ligne de commande, couverts par les tests.
-
-**Carnet de vol** : clique sur « Connecter mon dossier Syride » et choisis `Documents\Syride`, ou glisse ce dossier dans la page. Tu obtiens :
-
-- tes totaux et tes records (heures, distance, plafond, meilleur thermique…) ;
-- **toutes tes traces sur une seule carte**, avec tes sites de déco ;
-- tes heures de vol par mois ;
-- la liste de tes vols, triable. Un clic ouvre l'analyse détaillée du vol.
-
-Le carnet reste enregistré dans ton navigateur (IndexedDB), et Chrome ou Edge se souviennent du dossier : ensuite, un clic sur **Synchroniser** suffit pour récupérer tes nouveaux vols.
+- **Carnet Syride** : « Connecter mon dossier Syride », puis choisis `Documents\Syride`. Chrome et Edge se souviennent du dossier : ensuite, un clic sur *Synchroniser* suffit.
+- **Application installable** : sur téléphone, « Ajouter à l'écran d'accueil ». Elle marche hors ligne, et sur Android elle apparaît dans le menu *Partager* des fichiers `.igc`.
 
 Pour la lancer en local :
 
@@ -44,103 +50,98 @@ python -m http.server 8000
 # puis ouvre http://localhost:8000
 ```
 
-Mise en ligne : dans *Settings → Pages* du dépôt GitHub, choisis la source **GitHub Actions**. Le workflow `pages.yml` publie ensuite le site à chaque push.
-
-## Installation
+## Ligne de commande
 
 ```bash
-git clone https://github.com/ElRelook/flylog.git
-cd flylog
-pip install -e ".[plot]"
+pip install "flylog-igc[plot]"      # ou, depuis ce dépôt : pip install -e ".[plot]"
 ```
-
-## Utilisation
 
 ```bash
-flylog examples/vol_exemple.igc --map carte.html --profile profil.png
+flylog vol.igc                                   # analyse complète dans le terminal
+flylog vol.igc --map carte.html --profile profil.png --gpx vol.gpx --kml vol.kml
+flylog vol.igc --airspace france.txt             # vérification des espaces aériens (OpenAir)
+
+flylog sync                                      # carnet : ajoute les nouveaux vols de Documents/Syride
+flylog carnet                                    # totaux, records, sites, liste des vols
+
+flylog overlay vol.igc incrust.mov --video GX010123.MP4   # incrustation calée sur le clip
+flylog overlay vol.igc incrust.mov --start 14:32 --duration 90
 ```
 
-```
-  Vol du 18/09/2026
-  Pilote : Pilote Demo
-  Voile  : Voile EN-B
+<details>
+<summary>Exemple de sortie de <code>flylog vol.igc</code></summary>
 
-  Durée                 0h25
-  Distance parcourue    13.2 km
-  Altitude max          1598 m
-  Gain cumulé           935 m
-  Vario max             +2.8 m/s
+```
+  Vol du 12/07/2026
+  Voile  : Flow Future
+
+  Durée                 2h57
+  Distance parcourue    103.2 km
+  Altitude max          3319 m
+  Gain cumulé           6914 m
   ...
 
-  3 thermique(s) détecté(s)
-    #1  12:31  + 369 m   2.2 m/s   2.9 min  plafond 1318 m
-    #2  12:37  + 431 m   1.7 m/s   4.3 min  plafond 1598 m
-    #3  12:43  +  82 m   1.0 m/s   1.3 min  plafond 1565 m
+  Pilotage
+  Temps en virage       40 %  (dont 84 % à gauche)
+  Montée moy. thermique 1.3 m/s
+  Finesse sol en transition 8.6, max 14.3  à 37 km/h
+  Vent moyen estimé     5 km/h du sud (167°)
+
+  Score (estimation type XContest)
+    Distance libre      42.2 km  →   42.2 pts
+    Triangle plat        7.3 km  →    8.8 pts, fermeture 1.8 km
+
+  Espaces aériens :
+    ⚠ 10:44:43  LF-R196A1 EST GAP (NOTAM) [R, 1006 m sol → FL195]  (limite sol : à vérifier)
 ```
-
-### Carnet de vol (synchro Syride)
-
-Syride (SYS-PC-Tool ou l'app) copie chaque vol synchronisé dans `Documents/Syride`. FlyLog s'appuie sur ce dossier pour tenir ton carnet :
-
-```bash
-flylog sync      # ajoute les nouveaux vols au carnet
-flylog carnet    # totaux, records, heures par année, liste des vols
-```
-
-```
-  Carnet de vol : 20 vols, 34h08 de vol depuis le 01/08/2025
-
-  Distance totale     1 080 km
-  Plafond record      3319 m (12/07/2026)
-  Plus long vol       3h44 (22/05/2026)
-  ...
-```
-
-- `--source DOSSIER` synchronise n'importe quel dossier de fichiers `.igc` (XCTrack, Flymaster…).
-- Un même vol copié dans plusieurs dossiers n'est compté qu'une fois : les fichiers sont identifiés par leur contenu.
-- Quand l'analyse évolue, la synchro suivante recalcule automatiquement tout le carnet.
-- Le carnet est enregistré dans `~/.flylog/carnet.json`, **hors du dépôt**, pour que tes traces restent privées.
+</details>
 
 Le module s'utilise aussi depuis Python :
 
 ```python
 from flylog import read_igc, compute_stats, detect_thermals
+from flylog.metrics import piloting_metrics
+from flylog.score import best_scores
 
 vol = read_igc("mon_vol.igc")
-print(compute_stats(vol).max_alt)
-for t in detect_thermals(vol, min_climb=1.0):
-    print(t.start, t.gain_m, t.avg_climb)
+print(compute_stats(vol).max_alt, piloting_metrics(vol).wind)
+print(best_scores(vol)[0].points)
 ```
 
 ## Comment ça marche
 
-| Étape | Méthode |
+| Calcul | Méthode |
 |---|---|
 | Distance | Formule de haversine entre chaque point GPS |
-| Vario | Pente de l'altitude sur une fenêtre glissante (10 s pour les stats, 20 s pour les thermiques) |
-| Gain cumulé | Somme des montées sur l'altitude lissée (moyenne mobile), pour ne pas compter le bruit GPS |
-| Thermiques | Segments où le vario moyen reste > 0,5 m/s pendant au moins 30 s avec au moins 30 m de gain ; deux montées séparées de moins de 45 s sont fusionnées |
+| Vario | Pente de l'altitude sur une fenêtre glissante (5 à 20 s) |
+| Thermiques | Vario moyen > 0,5 m/s pendant au moins 30 s ; deux montées séparées de moins de 45 s sont fusionnées |
+| Virages | Variation du cap « déroulé » : plus de 6°/s signifie en virage |
+| Vent | Sur un nombre entier de tours en thermique, la vitesse propre s'annule : la dérive moyenne donne le vent |
+| Facteur de charge | Virage coordonné : n = √(1 + (v·ω/g)²) |
+| Score | Optimisation sur la trace rééchantillonnée : programmation dynamique pour la distance libre, recherche des triangles avec fermeture ≤ 20 % |
+| Espaces aériens | Point dans polygone (cercles et arcs OpenAir convertis en polygones), limites FL comparées à l'altitude baro, AMSL comparées à l'altitude GPS |
 
-## Vol d'exemple
+Toutes ces valeurs sont **estimées à partir du GPS**, avec en général un point par seconde. Elles servent à comparer ses vols. Pour les espaces aériens, vérifie toujours les NOTAM et les cartes officielles.
 
-`examples/vol_exemple.igc` est un vol **simulé** (déco de Saint-Hilaire-du-Touvet, atterro de Lumbin), généré par [`scripts/generate_example.py`](scripts/generate_example.py). Il contient trois thermiques connus, ce qui permet de tester la détection.
-
-## Tests
+## Développement
 
 ```bash
-pip install -e ".[dev]"
-pytest
+pip install -e ".[dev,plot]"
+pytest --cov=flylog        # tests (93 % de couverture)
+ruff check . && mypy       # style et types, aussi vérifiés par la CI
+python scripts/generate_example.py --demo   # régénère les vols de démo (simulés)
+python scripts/screenshots.py               # régénère les captures du README
 ```
+
+Les vols de `examples/` sont **simulés** par [`scripts/generate_example.py`](scripts/generate_example.py). Aucune vraie trace n'est versionnée.
 
 ## Feuille de route
 
-- [ ] Détection automatique du décollage et de l'atterrissage (vitesse sol)
-- [ ] Détection des spirales (variation du cap), qui distingue thermique et dynamique
-- [ ] Estimation du vent à partir de la dérive en thermique
-- [ ] Calcul du score CFD / XContest (distance libre, triangle plat, FAI)
-- [ ] Import depuis le profil public Syride
-- [ ] Comparaison de plusieurs vols
-- [ ] Export GPX / KML (Google Earth)
+- [ ] Replay 3D sur le relief
+- [ ] Classement des sites par saison et par orientation du vent
+- [ ] Import direct depuis Syride si une API officielle voit le jour
+
+Voir le [CHANGELOG](CHANGELOG.md).
 
 ## Licence
 

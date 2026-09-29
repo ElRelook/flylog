@@ -383,7 +383,8 @@
         <button class="btn" id="pick">Analyser un vol</button>
         <button class="btn" id="resume" hidden></button>
       </div>
-      <div class="alt">ou <button class="link-btn" id="example">essaie avec un vol d'exemple</button></div>
+      <div class="alt">ou essaie avec <button class="link-btn" id="example">un vol d'exemple</button>
+        · <button class="link-btn" id="demo-logbook">un carnet de démo</button></div>
       <input type="file" id="file" accept=".igc,.IGC" hidden>
       <input type="file" id="dir" webkitdirectory multiple hidden>
       <div class="status" id="status"></div>
@@ -1080,6 +1081,15 @@ $("theme").onclick = () => {
   try { localStorage.setItem("flylog-theme", root.dataset.theme); } catch {}
   drawProfile();
 };
+/* ---------- Demo links: ?demo=vol or ?demo=carnet ---------- */
+
+// Wait for every script (logbook.js wires the demo button).
+document.addEventListener("DOMContentLoaded", () => {
+  const demo = new URLSearchParams(location.search).get("demo");
+  if (demo === "vol" || demo === "") $("example").click();
+  else if (demo === "carnet") $("demo-logbook").click();
+});
+
 /* ---------- Installable app (PWA) ---------- */
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {

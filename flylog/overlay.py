@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import bisect
 import json
-import math
 import shutil
 import subprocess
 import sys
@@ -133,8 +132,10 @@ class OverlayRenderer:
 
         # Profile cursor.
         px, py = self.prof_x(seconds), self.prof_y(v["alt"])
-        d.line((px, self.prof_box[1] - 6 * s, px, self.prof_box[3] + 6 * s), fill=WHITE + (200,), width=max(1, int(2 * s)))
-        d.ellipse((px - 7 * s, py - 7 * s, px + 7 * s, py + 7 * s), fill=WHITE, outline=ACCENT, width=max(1, int(3 * s)))
+        d.line((px, self.prof_box[1] - 6 * s, px, self.prof_box[3] + 6 * s),
+               fill=WHITE + (200,), width=max(1, int(2 * s)))
+        d.ellipse((px - 7 * s, py - 7 * s, px + 7 * s, py + 7 * s),
+                  fill=WHITE, outline=ACCENT, width=max(1, int(3 * s)))
 
         # Telemetry panel, above the profile.
         x, y = int(40 * s), self.prof_box[1] - int(230 * s)
@@ -162,11 +163,12 @@ class OverlayRenderer:
         # Mini-map with flown part and position.
         mm = self.map_base.copy()
         md = ImageDraw.Draw(mm)
-        flown = self.map_track[: v["i"] + 1] + [self.map_pt(v["x"], v["y"])]
+        flown = self.map_track[: int(v["i"]) + 1] + [self.map_pt(v["x"], v["y"])]
         if len(flown) > 1:
             md.line(flown, fill=ACCENT + (255,), width=max(2, int(3 * s)))
         mx, my = flown[-1]
-        md.ellipse((mx - 8 * s, my - 8 * s, mx + 8 * s, my + 8 * s), fill=WHITE, outline=ACCENT, width=max(1, int(3 * s)))
+        md.ellipse((mx - 8 * s, my - 8 * s, mx + 8 * s, my + 8 * s),
+                   fill=WHITE, outline=ACCENT, width=max(1, int(3 * s)))
         img.alpha_composite(mm, self.map_pos)
         return img
 

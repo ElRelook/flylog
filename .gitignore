@@ -3,11 +3,17 @@ __pycache__/
 *.egg-info/
 .venv/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.md
 build/
 dist/
-# Generated outputs (except the ones shown in the README)
+_tmp*
+# Generated outputs (except the ones used by the README and the web app)
 *.html
 *.png
-!docs/*.png
 !index.html
+!docs/capture-*.png
+!icons/*.png
 .claude/

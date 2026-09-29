@@ -99,3 +99,16 @@ def test_logbook_entry_for_web():
     assert data["entry"]["path"] == "2026/vol.igc"
     assert data["entry"]["thermals"] == 3
     assert 100 <= len(data["track"]) <= 200
+
+
+def test_cli_map_profile_and_exports(tmp_path, capsys):
+    pytest.importorskip("folium")
+    pytest.importorskip("matplotlib")
+    out = {name: tmp_path / name for name in ("carte.html", "profil.png", "vol.gpx", "vol.kml")}
+    assert main([str(EXAMPLE), "--map", str(out["carte.html"]), "--profile", str(out["profil.png"]),
+                 "--gpx", str(out["vol.gpx"]), "--kml", str(out["vol.kml"])]) == 0
+    assert "arcgisonline" in out["carte.html"].read_text(encoding="utf-8")
+    assert out["profil.png"].read_bytes()[:4] == b"\x89PNG"
+    assert out["vol.gpx"].stat().st_size > 0 and out["vol.kml"].stat().st_size > 0
+    printed = capsys.readouterr().out
+    assert "Score" in printed and "Pilotage" in printed

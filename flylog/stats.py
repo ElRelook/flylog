@@ -15,7 +15,7 @@ def _windowed(fixes: list[Fix], window_s: float, fn) -> list[float]:
     """For each fix i, apply fn(earliest fix within window_s before i, fix i, dt)."""
     out: list[float] = []
     j = 0
-    for i, fix in enumerate(fixes):
+    for fix in fixes:
         while (fix.time - fixes[j].time).total_seconds() > window_s:
             j += 1
         dt = (fix.time - fixes[j].time).total_seconds()

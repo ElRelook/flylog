@@ -64,9 +64,8 @@ def detect_thermals(
     for i, rate in enumerate(rates):
         if rate < min_climb:
             continue
-        if ranges and ranges[-1][1] == i - 1:
-            ranges[-1][1] = i
-        elif ranges and (fixes[i].time - fixes[ranges[-1][1]].time).total_seconds() <= max_gap_s:
+        gap = (fixes[i].time - fixes[ranges[-1][1]].time).total_seconds() if ranges else None
+        if gap is not None and gap <= max_gap_s:
             ranges[-1][1] = i
         else:
             ranges.append([i, i])

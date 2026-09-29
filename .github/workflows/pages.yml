@@ -29,6 +29,7 @@ jobs:
           cp -r icons _site/
           cp flylog/*.py _site/flylog/
           cp examples/vol_exemple.igc _site/examples/
+          cp -r examples/demo _site/examples/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

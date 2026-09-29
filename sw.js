@@ -4,7 +4,7 @@
  * - libraries from CDNs (Pyodide, Leaflet, fonts): cache first, they are versioned;
  * - map tiles are not cached (too big, and their terms restrict it). */
 
-const CACHE = "flylog-v1";
+const CACHE = "flylog-v2";
 const SHARE_CACHE = "flylog-share";
 const CDN = ["cdn.jsdelivr.net", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com"];
 
@@ -38,11 +38,11 @@ self.addEventListener("fetch", (event) => {
 
   if (CDN.includes(url.hostname)) {
     event.respondWith((async () => {
-      const cached = await caches.match(event.request);
+      const cached = await fromCache(event.request);
       if (cached) return cached;
       const res = await fetch(event.request);
       // <script>/<link> without crossorigin give opaque responses: cache them too.
-      if (res.ok || res.type === "opaque") (await caches.open(CACHE)).put(event.request, res.clone());
+      if (res.ok || res.type === "opaque") store(event.request, res);
       return res;
     })());
     return;
@@ -50,15 +50,31 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
+      let res;
       try {
-        const res = await fetch(event.request);
-        if (res.ok) (await caches.open(CACHE)).put(event.request, res.clone());
-        return res;
+        res = await fetch(event.request);
       } catch {
-        const cached = await caches.match(event.request, { ignoreSearch: true });
+        const cached = await fromCache(event.request, { ignoreSearch: true });
         if (cached) return cached;
         throw new Error("hors ligne");
       }
+      if (res.ok) store(event.request, res);
+      return res;
     })());
   }
 });
+
+// The cache is a bonus: if storage is unavailable (quota, private mode…),
+// requests must still go through normally.
+async function fromCache(request, options) {
+  try {
+    return await caches.match(request, options);
+  } catch {
+    return undefined;
+  }
+}
+
+function store(request, response) {
+  const copy = response.clone();
+  caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+}

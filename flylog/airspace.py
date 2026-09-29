@@ -106,8 +106,10 @@ def _arc(center: tuple[float, float], radius_m: float, start_deg: float, end_deg
     proj = LocalProjection(*center)
     if full:
         span = 360.0
+    elif clockwise:
+        span = (end_deg - start_deg) % 360
     else:
-        span = (end_deg - start_deg) % 360 if clockwise else -((start_deg - end_deg) % 360)
+        span = -((start_deg - end_deg) % 360)
     steps = max(2, int(abs(span) / 5))
     out = []
     for s in range(steps + 1):

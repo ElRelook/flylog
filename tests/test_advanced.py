@@ -151,7 +151,9 @@ def test_parse_coord_and_limits():
     lat, lon = parse_coord("45:18:23 N 005:53:13 E")
     assert lat == pytest.approx(45.3064, abs=1e-4)
     assert lon == pytest.approx(5.8869, abs=1e-4)
-    assert parse_coord("45:30.5S 005:30.0W") == (pytest.approx(-45.5083, abs=1e-4), pytest.approx(-5.5, abs=1e-4))
+    south, west = parse_coord("45:30.5S 005:30.0W")
+    assert south == pytest.approx(-45.5083, abs=1e-4)
+    assert west == pytest.approx(-5.5, abs=1e-4)
     assert parse_limit("FL100").ref == "FL"
     assert parse_limit("FL100").meters == pytest.approx(3048)
     assert parse_limit("SFC").ref == "AGL"

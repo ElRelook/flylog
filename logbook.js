@@ -118,7 +118,34 @@ async function rememberHandle(handle) {
   await idb.set("dirHandle", handle);
 }
 
+// Demo logbook (simulated flights): kept in memory only, never mixed with the saved one.
+async function leaveDemo() {
+  if (!lb.demo) return;
+  lb.demo = false;
+  const saved = await idb.get("logbook");
+  Object.assign(lb, { flights: {}, files: {}, source: "", syncedAt: null, version: null, selected: new Set() });
+  if (saved?.flights) Object.assign(lb, saved);
+  lb.handle = (await idb.get("dirHandle")) || null;
+}
+
+async function loadDemoLogbook() {
+  await leaveDemo();
+  lb.demo = true;
+  Object.assign(lb, { flights: {}, files: {}, handle: null, source: "démo", syncedAt: null, selected: new Set() });
+  try {
+    const names = (await (await fetch("examples/demo/index.txt")).text()).split(/\r?\n/).filter(Boolean);
+    const sources = names.map((name) => ({
+      path: name,
+      getFile: async () => new File([await (await fetch(`examples/demo/${name}`)).blob()], name),
+    }));
+    await syncFrom(sources, "démo");
+  } catch {
+    setStatus("Carnet de démo introuvable.", "error");
+  }
+}
+
 async function connectFolder() {
+  await leaveDemo();
   if (!canPickDirectory) return $("dir").click(); // Firefox / Safari: plain folder input
   let handle;
   try {
@@ -131,6 +158,7 @@ async function connectFolder() {
 }
 
 async function resync() {
+  if (lb.demo) return loadDemoLogbook();
   if (!lb.handle) return connectFolder();
   try {
     const opts = { mode: "read" };
@@ -186,7 +214,10 @@ async function syncFrom(sources, sourceName) {
 
   lb.source = sourceName;
   lb.syncedAt = new Date().toISOString();
-  await idb.set("logbook", { version: lb.version, source: lb.source, syncedAt: lb.syncedAt, flights: lb.flights });
+  if (!lb.demo) {
+    await idb.set("logbook", { version: lb.version, source: lb.source, syncedAt: lb.syncedAt, flights: lb.flights });
+    lb.savedCount = Object.keys(lb.flights).length;
+  }
   $("lb-progress").hidden = true;
 
   const known = sources.length - added - errors.length;
@@ -225,6 +256,7 @@ function onDrop(e) {
     ? items[0].getAsFileSystemHandle() : null;
 
   (async () => {
+    await leaveDemo(); // a dropped folder is the visitor's own logbook
     const handle = await handlePromise?.catch(() => null);
     if (handle?.kind === "directory") {
       await rememberHandle(handle);
@@ -243,7 +275,9 @@ function renderLogbook() {
   updateResume();
   const synced = lb.syncedAt
     ? new Date(lb.syncedAt).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" }) : "";
-  $("lb-meta").textContent = [lb.source && `Dossier « ${lb.source} »`, synced && `synchronisé le ${synced}`]
+  $("lb-meta").textContent = lb.demo
+    ? "Carnet de démonstration : vols simulés autour de Grenoble. Connecte ton dossier pour voir le tien."
+    : [lb.source && `Dossier « ${lb.source} »`, synced && `synchronisé le ${synced}`]
     .filter(Boolean).join(" · ");
   $("lb-count").textContent = `${list.length} vol${list.length > 1 ? "s" : ""}`;
   renderLbCards(list);
@@ -459,7 +493,7 @@ function updateCompareButton() {
 }
 
 function updateResume() {
-  const n = Object.keys(lb.flights).length;
+  const n = lb.demo ? lb.savedCount || 0 : Object.keys(lb.flights).length;
   $("resume").hidden = !n;
   $("resume").innerHTML = `Mon carnet <span class="count">${n} vol${n > 1 ? "s" : ""}</span>`;
 }
@@ -474,7 +508,8 @@ $("dir").onchange = (e) => {
   e.target.value = "";
   syncFrom(sources, name);
 };
-$("resume").onclick = () => { showView("logbook"); lbStatus(""); renderLogbook(); };
+$("resume").onclick = async () => { await leaveDemo(); showView("logbook"); lbStatus(""); renderLogbook(); };
+$("demo-logbook").onclick = loadDemoLogbook;
 $("to-logbook").onclick = () => {
   showView("logbook");
   if (lb.map) fitLbMap();
@@ -486,7 +521,7 @@ $("lb-forget").onclick = async () => {
   if (!confirm("Supprimer le carnet enregistré dans ce navigateur ?\nTes fichiers .igc ne sont pas touchés.")) return;
   await idb.del("logbook");
   await idb.del("dirHandle");
-  Object.assign(lb, { flights: {}, files: {}, handle: null, source: "", syncedAt: null });
+  Object.assign(lb, { flights: {}, files: {}, handle: null, source: "", syncedAt: null, savedCount: 0, demo: false });
   updateResume();
   showView("hero");
 };
@@ -495,7 +530,11 @@ window.addEventListener("resize", () => renderMonthChart(entries()));
 // Restore the logbook saved during a previous visit.
 (async () => {
   const saved = await idb.get("logbook");
-  if (saved?.flights) Object.assign(lb, saved);
-  lb.handle = (await idb.get("dirHandle")) || null;
+  const handle = (await idb.get("dirHandle")) || null;
+  lb.savedCount = Object.keys(saved?.flights || {}).length;
+  if (!lb.demo) { // the demo may have started meanwhile: don't overwrite it
+    if (saved?.flights) Object.assign(lb, saved);
+    lb.handle = handle;
+  }
   updateResume();
 })();
