@@ -1,6 +1,6 @@
 # 🪂 FlyLog
 
-![tests](https://github.com/VOTRE-PSEUDO/flylog/actions/workflows/tests.yml/badge.svg)
+![tests](https://github.com/ElRelook/flylog/actions/workflows/tests.yml/badge.svg)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![licence](https://img.shields.io/badge/licence-MIT-green)
 
@@ -21,7 +21,7 @@ Tu donnes à FlyLog le fichier `.igc` de ton vario ou de ton application de vol.
 
 ## Interface web
 
-👉 **Démo en ligne : https://VOTRE-PSEUDO.github.io/flylog/**
+👉 **Démo en ligne : https://ElRelook.github.io/flylog/**
 
 Glisse ton fichier `.igc` dans la page pour voir tes stats, la carte (topo ou satellite) avec la trace colorée selon le vario, la liste des thermiques et le profil d'altitude. Au survol du profil, ta position s'affiche sur la carte. Le seuil de détection des thermiques se règle en direct.
 
@@ -39,7 +39,7 @@ Mise en ligne : dans *Settings → Pages* du dépôt GitHub, choisis la source *
 ## Installation
 
 ```bash
-git clone https://github.com/VOTRE-PSEUDO/flylog.git
+git clone https://github.com/ElRelook/flylog.git
 cd flylog
 pip install -e ".[plot]"
 ```
