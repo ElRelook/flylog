@@ -16,7 +16,18 @@ def _format_duration(seconds: float) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="flylog", description="Analyse une trace de vol IGC.")
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] in ("sync", "carnet"):
+        from .logbook_cli import main as logbook_main
+        return logbook_main(argv)
+    return analyze_main(argv)
+
+
+def analyze_main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(
+        prog="flylog", description="Analyse une trace de vol IGC.",
+        epilog="Carnet de vol : « flylog sync » puis « flylog carnet » (voir flylog sync -h).",
+    )
     ap.add_argument("igc", help="fichier .igc à analyser")
     ap.add_argument("--map", metavar="HTML", help="génère une carte interactive")
     ap.add_argument("--profile", metavar="PNG", help="génère le profil d'altitude")
