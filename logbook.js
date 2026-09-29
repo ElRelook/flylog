@@ -10,6 +10,7 @@ const lb = {
   syncedAt: null,
   version: null,
   sort: { key: "date", dir: -1 },
+  selected: new Set(), // flights ticked for comparison
   map: null,
   layer: null,
   tracks: {},    // id -> Leaflet polyline
@@ -75,8 +76,9 @@ function showView(name) {
   $("hero").hidden = name !== "hero";
   $("results").hidden = name !== "results";
   $("logbook").hidden = name !== "logbook";
+  $("compare").hidden = name !== "compare";
   $("new-flight").hidden = name === "hero";
-  $("to-logbook").hidden = !(name === "results" && Object.keys(lb.flights).length);
+  $("to-logbook").hidden = !((name === "results" || name === "compare") && Object.keys(lb.flights).length);
   window.scrollTo(0, 0);
 }
 
@@ -248,6 +250,7 @@ function renderLogbook() {
   renderLbMap();
   renderMonthChart(list);
   renderLbTable(list);
+  renderLogbookExtras(list); // logbook-extras.js
 }
 
 function takeoffSites(list) {
@@ -289,7 +292,7 @@ function renderLbMap() {
     const sat = L.tileLayer(esri("World_Imagery"), { attribution: "Tiles © Esri", maxZoom: 19 });
     // An initial view matters: Leaflet only re-measures its container once it has one.
     lb.map = L.map("lb-map", { preferCanvas: true, layers: [topo], center: [45.3, 5.9], zoom: 9 });
-    L.control.layers({ "Topo": topo, "Satellite": sat }, null, { position: "topright" }).addTo(lb.map);
+    lb.layersControl = L.control.layers({ "Topo": topo, "Satellite": sat }, null, { position: "topright" }).addTo(lb.map);
   }
   if (lb.layer) lb.layer.remove();
   lb.layer = L.layerGroup().addTo(lb.map);
@@ -411,6 +414,7 @@ const COLUMNS = [
   ["gain", "Gain", (e) => e.gain_m, (e) => `${nf(e.gain_m)} m`],
   ["thermals", "Thermiques", (e) => e.thermals, (e) => nf(e.thermals)],
   ["best", "Meilleur therm.", (e) => e.best_thermal_m, (e) => (e.best_thermal_m ? `+${nf(e.best_thermal_m)} m` : "–")],
+  ["score", "Score", (e) => e.score_points || 0, (e) => (e.score_points ? `${nf(e.score_points, 1)} pts` : "–")],
 ];
 
 function renderLbTable(list) {
@@ -421,21 +425,37 @@ function renderLbTable(list) {
   });
   const arrow = lb.sort.dir > 0 ? "↑" : "↓";
   $("lb-table").innerHTML =
-    `<thead><tr>${COLUMNS.map(([k, label]) =>
+    `<thead><tr><th class="check"></th>${COLUMNS.map(([k, label]) =>
       `<th data-key="${k}" class="${k === lb.sort.key ? "sorted" : ""}">${label}${k === lb.sort.key ? " " + arrow : ""}</th>`).join("")}</tr></thead>` +
     `<tbody>${rows.map((e) =>
-      `<tr data-id="${e.id}">${COLUMNS.map(([, , , fmt]) => `<td>${fmt(e)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+      `<tr data-id="${e.id}"><td class="check"><input type="checkbox" aria-label="Comparer ce vol" ${lb.selected.has(e.id) ? "checked" : ""}></td>` +
+      `${COLUMNS.map(([, , , fmt]) => `<td>${fmt(e)}</td>`).join("")}</tr>`).join("")}</tbody>`;
 
-  $("lb-table").querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
+  $("lb-table").querySelectorAll("th[data-key]").forEach((th) => th.addEventListener("click", () => {
     const key = th.dataset.key;
     lb.sort = { key, dir: lb.sort.key === key ? -lb.sort.dir : -1 };
     renderLbTable(entries());
   }));
   $("lb-table").querySelectorAll("tbody tr").forEach((tr) => {
+    const box = tr.querySelector("input[type=checkbox]");
+    box.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if (box.checked) lb.selected.add(tr.dataset.id); else lb.selected.delete(tr.dataset.id);
+      // Keep at most two: untick the oldest choice.
+      while (lb.selected.size > 2) lb.selected.delete(lb.selected.values().next().value);
+      renderLbTable(entries());
+    });
     tr.addEventListener("click", () => openFlight(tr.dataset.id));
     tr.addEventListener("mouseenter", () => highlight(tr.dataset.id, true));
     tr.addEventListener("mouseleave", () => highlight(tr.dataset.id, false));
   });
+  updateCompareButton();
+}
+
+function updateCompareButton() {
+  const n = lb.selected.size;
+  $("compare-btn").disabled = n !== 2;
+  $("compare-btn").textContent = n === 2 ? "Comparer les 2 vols" : `Comparer (${n}/2)`;
 }
 
 function updateResume() {

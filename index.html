@@ -154,8 +154,8 @@
   .card .sub { font-size: 13px; color: var(--muted); }
 
   .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
-  .panel-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  .panel-head h3 { margin: 0; font-size: 15px; }
+  .panel-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .panel-head h3 { margin: 0; font-size: 15px; white-space: nowrap; }
   .panel-head .hint { color: var(--muted); font-size: 13px; }
   .panel-head .spacer { flex: 1; }
 
@@ -277,6 +277,39 @@
   .flights tbody tr:hover, .flights tbody tr.hover { background: var(--accent-soft); }
   .flights tbody tr:last-child td { border-bottom: 0; }
   .site-pin { width: 22px; height: 22px; border-radius: 50%; background: #16a34a; color: #fff; border: 2px solid #fff; display: grid; place-items: center; font: 700 11px Inter, sans-serif; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  .goal-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .goal-body { padding: 14px 16px 16px; }
+  .goal-value { font-size: 26px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .goal-value small { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .goal-track { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; margin: 10px 0 8px; }
+  .goal-track .bar-fill { height: 100%; border-radius: 5px; background: var(--accent); }
+  .goal-edit { display: flex; align-items: center; gap: 6px; }
+  .goal-edit input { width: 64px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 3px 6px; }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 12px 16px 16px; }
+  .badge { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border); font-size: 13px; line-height: 1.3; }
+  .badge .ico { font-size: 22px; }
+  .badge b { display: block; font-size: 13px; }
+  .badge span.sub { color: var(--muted); font-size: 12px; }
+  .badge.locked { opacity: .45; filter: grayscale(1); }
+  .progress-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px 12px 12px; }
+  .progress-grid figure { margin: 0; position: relative; }
+  .progress-grid figcaption { font-size: 13px; font-weight: 600; margin: 4px 4px 0; }
+  .progress-grid figcaption span { color: var(--muted); font-weight: 400; }
+  .progress-grid svg { width: 100%; height: 150px; display: block; }
+  .progress-grid .dot { fill: var(--accent); opacity: .55; }
+  .progress-grid .dot:hover { opacity: 1; }
+  .progress-grid .trend { fill: none; stroke: var(--accent-strong); stroke-width: 2; }
+  .progress-grid .grid { stroke: var(--grid); }
+  .progress-grid text { fill: var(--muted); font: 11px Inter, sans-serif; }
+  .flights td.check, .flights th.check { width: 28px; padding-right: 0; }
+  .flights input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  #compare[hidden] { display: none; }
+  #compare { padding: 28px 0 48px; }
+  #cmp-map { height: 460px; background: var(--surface-2); }
+  #cmp-profile { width: 100%; height: 100%; display: block; }
+  .cmp-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 14px; }
+  .cmp-legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .cmp-legend i { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
   .link-btn { background: none; border: 0; padding: 0; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; }
   .drop .alt { margin-top: 12px; font-size: 13px; color: var(--muted); }
   .btn .count { background: var(--accent-soft); color: var(--accent-strong); border-radius: 6px; padding: 0 6px; font-size: 12px; }
@@ -287,6 +320,7 @@
     #map { height: 380px; }
     #thermal-list { height: 320px; }
     #lb-map { height: 400px; }
+    .goal-grid, .progress-grid { grid-template-columns: 1fr; }
     .extras-grid { grid-template-columns: 1fr; }
     .replay input[type=range] { width: 90px; }
   }
@@ -458,6 +492,43 @@
   </div>
 </main>
 
+<main id="compare" hidden>
+  <div class="wrap">
+    <div class="lb-head">
+      <div>
+        <h2>Comparaison de deux vols</h2>
+        <div class="meta">les deux vols partent ensemble : même temps écoulé depuis le décollage</div>
+      </div>
+    </div>
+    <div class="cmp-legend" id="cmp-legend"></div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Rejeu côte à côte</h3>
+        <div class="spacer"></div>
+        <div class="replay">
+          <button class="btn icon" id="cmp-play" aria-label="Rejouer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+          </button>
+          <input type="range" id="cmp-pos" min="0" max="1000" value="0" aria-label="Position">
+          <select id="cmp-speed" aria-label="Vitesse">
+            <option value="30">×30</option>
+            <option value="60" selected>×60</option>
+            <option value="120">×120</option>
+          </select>
+        </div>
+      </div>
+      <div class="map-wrap">
+        <div id="cmp-map"></div>
+        <div class="hud" id="cmp-hud"></div>
+      </div>
+      <div class="profile-wrap"><canvas id="cmp-profile"></canvas></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="table-scroll"><table class="flights" id="cmp-table"></table></div>
+    </div>
+  </div>
+</main>
+
 <main id="logbook" hidden>
   <div class="wrap">
     <div class="lb-head">
@@ -482,11 +553,32 @@
 
     <div class="cards" id="lb-cards"></div>
 
+    <div class="goal-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Objectif <span id="goal-year"></span></h3>
+          <div class="spacer"></div>
+          <label class="hint goal-edit">heures visées
+            <input type="number" id="goal-hours" min="1" max="999" step="1" value="50">
+          </label>
+        </div>
+        <div class="goal-body">
+          <div class="goal-value" id="goal-value"></div>
+          <div class="bar-track goal-track"><div class="bar-fill" id="goal-bar"></div></div>
+          <div class="hint" id="goal-hint"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Badges</h3><span class="hint" id="badge-count"></span></div>
+        <div class="badges" id="badges"></div>
+      </div>
+    </div>
+
     <div class="lb-panels">
       <div class="panel">
         <div class="panel-head">
           <h3>Toutes mes traces</h3>
-          <span class="hint">survole une trace pour l'identifier, clique pour ouvrir le vol · points verts = décos</span>
+          <span class="hint">survole une trace pour l'identifier, clique pour ouvrir le vol · points verts = décos · calque « Thermiques » en haut à droite</span>
         </div>
         <div id="lb-map"></div>
       </div>
@@ -501,9 +593,17 @@
       </div>
       <div class="panel">
         <div class="panel-head">
+          <h3>Ma progression</h3>
+          <span class="hint">un point par vol · ligne = moyenne glissante sur 5 vols</span>
+        </div>
+        <div class="progress-grid" id="progress-charts"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
           <h3>Mes vols</h3>
           <span class="hint" id="lb-count"></span>
           <div class="spacer"></div>
+          <button class="btn" id="compare-btn" disabled title="Coche deux vols dans la liste">Comparer</button>
           <span class="hint">🔒 enregistré uniquement dans ce navigateur</span>
         </div>
         <div class="table-scroll"><table class="flights" id="lb-table"></table></div>
@@ -983,5 +1083,6 @@ try {
 </script>
 <script src="logbook.js"></script>
 <script src="flight-extras.js"></script>
+<script src="logbook-extras.js"></script>
 </body>
 </html>
